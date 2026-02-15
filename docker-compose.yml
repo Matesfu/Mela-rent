@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mela_rent_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mela_rent_db
+      POSTGRES_USER: mela_user
+      POSTGRES_PASSWORD: mela_password
+    ports:
+      - "5435:5432"
+    volumes:
+      - mela_rent_pgdata:/var/lib/postgresql/data
+
+volumes:
+  mela_rent_pgdata:
