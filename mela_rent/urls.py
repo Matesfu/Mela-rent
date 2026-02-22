@@ -19,6 +19,12 @@ urlpatterns = [
 
     # Users app (register, profile)
     path('api/', include('users.urls')),
+    
+    # Properties app
+    path('api/properties/', include('properties.urls')),
+    
+    # Interactions app (Favorites, Payments)
+    path('api/interactions/', include('interactions.urls')),
 ]
 
 # Serve media files in development

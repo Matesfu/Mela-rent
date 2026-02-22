@@ -53,7 +53,17 @@ INSTALLED_APPS = [
 
     # Local apps
     'users',
+    'properties',
+    'interactions',
 ]
+
+# ---------------------------------------------------------------------------
+# Business Logic Configuration
+# ---------------------------------------------------------------------------
+
+REQUIRE_LISTING_PAYMENT = os.environ.get('REQUIRE_LISTING_PAYMENT', 'True').lower() in ('true', '1', 'yes')
+LISTING_EXPIRATION_DAYS = int(os.environ.get('LISTING_EXPIRATION_DAYS', '30'))
+PROPERTY_LISTING_PRICE = float(os.environ.get('PROPERTY_LISTING_PRICE', '15.00'))
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
