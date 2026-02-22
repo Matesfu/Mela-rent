@@ -78,8 +78,15 @@ class PropertyViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
+        user = self.request.user
+        
+        # Auto-upgrade TENANT to OWNER upon first property creation
+        if hasattr(user, 'role') and user.role == 'TENANT':
+            user.role = 'OWNER'
+            user.save()
+            
         # The user creating the property is assigned as the owner automatically
-        serializer.save(owner=self.request.user)
+        serializer.save(owner=user)
 
     def perform_destroy(self, instance):
         # Override destroy to trigger soft delete instead of hard delete

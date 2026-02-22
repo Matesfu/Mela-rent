@@ -49,13 +49,13 @@ class UserRegistrationTest(TestCase):
 
     # --- Success Cases ---
 
-    def test_register_owner_success(self):
-        """Register a new OWNER user — expect 201."""
+    def test_register_ignores_submitted_role(self):
+        """Register submitting OWNER role - expect TENANT (auto-default, read-only)."""
         response = self.client.post(self.register_url, self.valid_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['username'], 'testowner')
         self.assertEqual(response.data['email'], 'owner@example.com')
-        self.assertEqual(response.data['role'], 'OWNER')
+        self.assertEqual(response.data['role'], 'TENANT')
         self.assertIn('id', response.data)
         self.assertIn('message', response.data)
 
