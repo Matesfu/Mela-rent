@@ -35,6 +35,9 @@ class Property(models.Model):
     max_guests = models.IntegerField()
     amenities = models.TextField()
     
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+
     image = models.ImageField(upload_to='properties/images/', null=True, blank=True)
     
     is_available = models.BooleanField(default=True)

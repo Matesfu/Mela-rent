@@ -25,6 +25,9 @@ urlpatterns = [
     
     # Interactions app (Favorites, Payments)
     path('api/interactions/', include('interactions.urls')),
+
+    # Messaging app
+    path('api/messaging/', include('messaging.urls')),
 ]
 
 # Serve media files in development
