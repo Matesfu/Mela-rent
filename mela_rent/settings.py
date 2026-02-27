@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'users',
     'properties',
     'interactions',
+    'messaging',
 ]
 
 # ---------------------------------------------------------------------------
@@ -197,3 +198,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ---------------------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---------------------------------------------------------------------------
+# Security Hardening (Weekly Update 3)
+# ---------------------------------------------------------------------------
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+# Only enforce HTTPS cookies if not in debug mode
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# If we were in a real production environment with SSL, we would also set:
+# SECURE_SSL_REDIRECT = True

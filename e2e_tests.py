@@ -751,3 +751,105 @@ class FullUserJourneyE2ETest(APITestCase):
         # Verify it's gone
         list_resp2 = self.client.get('/api/interactions/favorites/')
         self.assertEqual(len(list_resp2.data['results']), 0)
+
+
+# ===========================================================================
+# 11. GEOLOCATION INTEGRATION
+# ===========================================================================
+
+class GeolocationE2ETest(APITestCase):
+    """E2E tests for property geolocation fields."""
+
+    def setUp(self):
+        self.owner = User.objects.create_user(username='geowner', password='P!', role='OWNER')
+        self.url = '/api/properties/'
+        self.client.force_authenticate(user=self.owner)
+
+    @override_settings(REQUIRE_LISTING_PAYMENT=False)
+    def test_create_property_with_geolocation(self):
+        """Property should be created with latitude and longitude."""
+        data = {
+            'title': 'Geo Prop', 'description': 'D', 'house_type': 'Villa',
+            'location': 'Addis', 'price': '5000.00', 'bedrooms': 3,
+            'bathrooms': 2.0, 'max_guests': 6, 'amenities': 'WiFi',
+            'latitude': 9.033333, 'longitude': 38.700000
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(float(response.data['latitude']), 9.033333)
+        self.assertEqual(float(response.data['longitude']), 38.700000)
+
+    @override_settings(REQUIRE_LISTING_PAYMENT=False)
+    def test_update_property_geolocation(self):
+        """Property geolocation should be updatable."""
+        prop = Property.objects.create(
+            owner=self.owner, title='Old Geo', description='D',
+            house_type='Villa', location='X', price=1000,
+            bedrooms=1, bathrooms=1, max_guests=1, amenities='N',
+            latitude=1.0, longitude=1.0
+        )
+        response = self.client.patch(f'{self.url}{prop.id}/', {'latitude': 2.0})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        prop.refresh_from_db()
+        self.assertEqual(float(prop.latitude), 2.0)
+
+
+# ===========================================================================
+# 12. MESSAGING SYSTEM
+# ===========================================================================
+
+from messaging.models import Conversation, Message
+
+class MessagingE2ETest(APITestCase):
+    """E2E tests for the direct messaging system."""
+
+    def setUp(self):
+        self.tenant = User.objects.create_user(username='msgtenant', password='P!', role='TENANT')
+        self.owner = User.objects.create_user(username='msgowner', password='P!', role='OWNER')
+        self.other = User.objects.create_user(username='msgother', password='P!', role='TENANT')
+        self.prop = Property.objects.create(
+            owner=self.owner, title='Message Prop', house_type='Villa',
+            price=5000, description='D', location='X', bedrooms=1,
+            bathrooms=1, max_guests=1, amenities='N'
+        )
+        self.conv_url = '/api/messaging/conversations/'
+
+    def test_create_conversation_and_send_message(self):
+        """Testing conversation creation and message exchange."""
+        # Create conversation manually (as we haven't built a 'start conv' endpoint yet, we'll use ORM and test views)
+        conv = Conversation.objects.create(property=self.prop)
+        conv.participants.add(self.tenant, self.owner)
+        
+        # Tenant sends a message
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.post(f'{self.conv_url}{conv.id}/send_message/', {'content': 'Is it available?'})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['content'], 'Is it available?')
+        
+        # Owner views messages
+        self.client.force_authenticate(user=self.owner)
+        response = self.client.get(f'{self.conv_url}{conv.id}/messages/')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['content'], 'Is it available?')
+
+    def test_unauthorized_access_to_conversation(self):
+        """Users not in the conversation should get 404/403."""
+        conv = Conversation.objects.create(property=self.prop)
+        conv.participants.add(self.tenant, self.owner)
+        
+        self.client.force_authenticate(user=self.other)
+        response = self.client.get(f'{self.conv_url}{conv.id}/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_conversations_only_shows_participants(self):
+        """List view should only return conversations where the user is a participant."""
+        conv = Conversation.objects.create(property=self.prop)
+        conv.participants.add(self.tenant, self.owner)
+        
+        self.client.force_authenticate(user=self.tenant)
+        response = self.client.get(self.conv_url)
+        self.assertEqual(len(response.data['results']), 1)
+        
+        self.client.force_authenticate(user=self.other)
+        response = self.client.get(self.conv_url)
+        self.assertEqual(len(response.data['results']), 0)
